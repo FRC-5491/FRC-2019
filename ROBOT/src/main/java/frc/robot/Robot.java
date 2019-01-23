@@ -3,7 +3,7 @@
 /*| Written for Team 5491's 2019 DESTINATION: DEEP SPACE FRC Competition |*/
 /*| and used on their robot, Johnny.                                     |*/
 /*+----------------------------------------------------------------------+*/
-/*| Author(s): Jack Pirone                                               |*/
+/*| Author(s): Jack Pirone, Kathryn Adinolfi, Julien Blanchet            |*/
 /*+----------------------------------------------------------------------+*/
 /*| Copyright: Jack Pirone, 2019. SEE BELOW                              |*/
 /*| This is free sotware.                                                |*/
@@ -11,7 +11,7 @@
 /*| orignal authors, and if the distributer specifies that changes were  |*/
 /*| to the original program.                                             |*/
 /*+----------------------------------------------------------------------|*/
-/*| Hours wasted on writing this code: 4                                 |*/
+/*| Hours wasted on writing this code: 10                                |*/
 /*+----------------------------------------------------------------------+*/
 
 
@@ -20,6 +20,7 @@ package frc.robot; //Package Declaration(I think thats what this...)
 //Import Statements
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
+import edu.wpi.first.wpilibj.smartdashboard.*;
 
 //Main Robot Class
 public class Robot extends TimedRobot
@@ -34,6 +35,9 @@ public class Robot extends TimedRobot
   private static final int PWM_CAMERA_X = 4; //Camera X (PWM 4)
   private static final int PWM_CAMERA_Y = 5; //Camera Y (PWM 5)
 
+  //PWM Connections for the ramp
+  private static final int PWM_RAMP_MOTOR = 6;
+
   //Create the ESC objects for the Mecanum Drive
   private Spark frontLeft = new Spark(PWM_FRONT_LEFT); //Front Left ESC
   private Spark rearLeft = new Spark(PWM_REAR_LEFT); //Rear Left ESC
@@ -47,6 +51,9 @@ public class Robot extends TimedRobot
   private Servo cameraX = new Servo(PWM_CAMERA_X); //Up/Down Axis
   private Servo cameraY = new Servo(PWM_CAMERA_Y); //Left/Right Axis
 
+  //Create the ESC object for the ramp
+  private static Talon rampMotor = new Talon(PWM_RAMP_MOTOR);
+
   //Joysticks/Controllers
   private Joystick driveControl = new Joystick(0); //Joystick for Camera/Arm
   //private XboxController movementControl = new XboxController(0);
@@ -54,12 +61,19 @@ public class Robot extends TimedRobot
   //Timer Objects
   private Timer timer = new Timer();
 
+  //Power Distribution Board
+  public static CAN pduCAN = new CAN(0);
+  public static PowerDistributionPanel pdu = new PowerDistributionPanel(0);
+
+  public static int egg = 0;
+
 
   @Override
   public void robotInit()
   {
     cameraX.setAngle(90); //Set CameraX to 90 Degrees
     cameraY.setAngle(90); //Set CameraY to 90 Degrees
+    
   }
 
   @Override
@@ -72,20 +86,38 @@ public class Robot extends TimedRobot
   @Override
   public void autonomousPeriodic()
   {
-    
+    //DON'T PUT THINGS IN HERE
   }
 
   @Override
   public void teleopInit()
   {
-    
   }
   
   @Override
   public void teleopPeriodic()
-  {
+  { 
+    //GET DATA
+    double channel12I = pdu.getCurrent(12); //Get current of front left ESC
+    double channel14I = pdu.getCurrent(14); //Get current of rear left ESC
+    double channel13I = pdu.getCurrent(13); //Get current of front right ESC
+    double channel15I = pdu.getCurrent(15); //Get current of rear right ESC
+    double x = driveControl.getX(); //Get joystick x
+    double y = -driveControl.getY(); //Get joysitck y
+    double z = driveControl.getZ(); //Get joystick z
+
+    //Setup the Shuffleboard(SB)
+    SmartDashboard.putData("RobotDrive: ", robotDrive); //Add Robot Drive to SB
+    SmartDashboard.putNumber("Front Left Current: ", channel12I); //Add I draw of front left to SB
+    SmartDashboard.putNumber("Left Rear Current: ", channel14I); //Add I draw of rear left to SB
+    SmartDashboard.putNumber("Front Right Current: ", channel13I); //Add I draw of front right to SB
+    SmartDashboard.putNumber("Rear Right Current: ", channel15I); //Add I draw of rear right to SB
+    SmartDashboard.putNumber("Joystick X: ", x); //Add joystick X val to SB
+    SmartDashboard.putNumber("Joystick Y: ", y); //Add joystick Y val to SB
+    SmartDashboard.putNumber("Joystick Z: ", z);  //Add joystick Z val to SB
+
     //Move the robot
-    robotDrive.driveCartesian(driveControl.getY(), driveControl.getX(), driveControl.getZ(), 0.0);
+    robotDrive.driveCartesian(x, y, z);
 
     //Camera Movement
     if (driveControl.getPOV() == 0) //Camera Up
