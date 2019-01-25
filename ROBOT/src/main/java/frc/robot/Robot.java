@@ -116,8 +116,35 @@ public class Robot extends TimedRobot
     SmartDashboard.putNumber("Joystick Y: ", y); //Add joystick Y val to SB
     SmartDashboard.putNumber("Joystick Z: ", z);  //Add joystick Z val to SB
 
+    // Report joystick buttons to robot
+    boolean[] buttonStates = new boolean[12];    
+    for(int i = 1; i <= 12; i++) 
+    {
+      buttonStates[i-1] = driveControl.getRawButton(i);
+    }
+    SmartDashboard.putBooleanArray("Joystick Buttons", buttonStates);
+    
     //Move the robot
     robotDrive.driveCartesian(x, y, z);
+
+    // Control Ramp
+    if (driveControl.getRawButton(3))
+    {
+      // Open ramp
+      // TODO: Prevent further motion if stop switch is activated
+      rampMotor.set(0.25);
+    }
+    else if (driveControl.getRawButton(4))
+    {
+      // Close ramp
+      // TODO: Prevent futher motion if stop switch is activated
+      rampMotor.set(-0.25);
+    }
+    else
+    {
+      // Stop moving ramp if no button is pressed
+      rampMotor.set(0);
+    }
 
     //Camera Movement
     if (driveControl.getPOV() == 0) //Camera Up
