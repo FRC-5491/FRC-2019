@@ -118,6 +118,7 @@ public class Robot extends TimedRobot
 
     // Report joystick buttons to robot
     boolean[] buttonStates = new boolean[12];    
+    // Note: button indexes start at 1
     for(int i = 1; i <= 12; i++) 
     {
       buttonStates[i-1] = driveControl.getRawButton(i);
