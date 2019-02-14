@@ -11,28 +11,27 @@
 /*| orignal authors, and if the distributer specifies that changes were  |*/
 /*| to the original program.                                             |*/
 /*+----------------------------------------------------------------------|*/
-/*| Hours wasted on writing this code: 15                                |*/
+/*| Hours wasted on writing this code: 17                                |*/
 /*+----------------------------------------------------------------------+*/
 
 
 package frc.robot; //Package Declaration(I think thats what this...)
 
 //Import Statements
-import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
-import edu.wpi.cscore.CvSink;
-import edu.wpi.cscore.CvSource;
-import edu.wpi.cscore.UsbCamera;
-import edu.wpi.first.cameraserver.CameraServer;
+
 import edu.wpi.first.wpilibj.*;
+import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.*;
 import frc.robot.CameraControl;
-import frc.robot.Camera;
+import frc.robot.ArmControl;
 
 //Main Robot Class
 public class Robot extends TimedRobot
 {
+  //JOYSTICK DEADBAND
+  private static final double DEADBAND = 0.05;
+
   //PWM Connections for the mecanum drive
   private static final int PWM_FRONT_LEFT = 0; //Front Left (PWM 0)
   private static final int PWM_REAR_LEFT = 1; //Front Right (PWM 1)
@@ -67,6 +66,7 @@ public class Robot extends TimedRobot
   //Joysticks/Controllers
   private Joystick driveControl = new Joystick(0); //Movement and Driver Camera Control
   private XboxController armControl = new XboxController(1); //Arms and Arm Camera Control
+  
 
   //Timer Objects
   private Timer timer = new Timer();
@@ -75,15 +75,11 @@ public class Robot extends TimedRobot
   public static CAN pduCAN = new CAN(0);
   public static PowerDistributionPanel pdu = new PowerDistributionPanel(0);
 
-  //Cameras
- 
   //Pneumatics
   public static CAN pcmCAN = new CAN(1);
   public static Compressor c = new Compressor(0); //Air Compressor
-  public static Solenoid s1 = new Solenoid(0);
-  public static Solenoid s2 = new Solenoid(1);
-  public static Solenoid s3 = new Solenoid(2);
-  public static Solenoid s4 = new Solenoid(3);
+  
+ 
   public static boolean solenoidOneExtended = false;
   public static boolean solenoidTwoExtended = false;
 
@@ -92,56 +88,15 @@ public class Robot extends TimedRobot
   
   public static int egg = 0;
 
-  //Cameras
-  
+  //Arm Control
+  public static ArmControl arms = new ArmControl(9, 10, 11, 12, 0, 1, 1);
   
 
   @Override
   public void robotInit()
   {
+    robotDrive.setDeadband(DEADBAND);
     c.setClosedLoopControl(true); //Air compressor
-    
-    //Multithreading for live camera feed from multiple cameras
-    //If you do not know how this works, DO NOT FUCK AROUND WITH
-    //ANY PART OF THIS CODE!!
-      // new Thread(() -> {
-      //     UsbCamera driver = CameraServer.getInstance().startAutomaticCapture(1);
-      //     driver.setResolution(640, 480);
-      //     driver.setFPS(30);
-      //     CvSink cvSinkDriver = CameraServer.getInstance().getVideo();
-      //     CvSource outputStreamDriver = CameraServer.getInstance().putVideo("Driver", 640, 480);
-      //     Mat sourceDriver = new Mat();
-      //     Mat outputDriver = new Mat();
-      //     while(!Thread.interrupted()) 
-      //     {
-      //       cvSinkDriver.grabFrame(sourceDriver);
-      //       Imgproc.cvtColor(sourceDriver, outputDriver, Imgproc.COLOR_BGR2GRAY);
-      //       outputStreamDriver.putFrame(outputDriver);
-      //     }
-      // }).start();
-
-      new Thread(() -> {
-        UsbCamera arms = CameraServer.getInstance().startAutomaticCapture(1);
-        arms.setResolution(320, 240);
-        arms.setFPS(30);
-        CvSink cvSinkArms = CameraServer.getInstance().getVideo();
-        CvSource outputStreamArms = CameraServer.getInstance().putVideo("Arms", 1280, 720);
-        Mat sourceArms = new Mat();
-        Mat outputArms = new Mat();
-        while(!Thread.interrupted()) 
-        {
-          cvSinkArms.grabFrame(sourceArms);
-          Imgproc.cvtColor(sourceArms, outputArms, Imgproc.COLOR_BGR2GRAY);
-          outputStreamArms.putFrame(outputArms);
-        }
-      }).start();
-
-  //     UsbCamera drivercam =  CameraServer.getInstance().startAutomaticCapture(0);
-  //     UsbCamera armcam = CameraServer.getInstance().startAutomaticCapture(1);
-  //     armcam.setFPS(30);
-  //     armcam.setResolution(1280, 720);
-  //     drivercam.setFPS(30);
-  //     drivercam.setResolution(1280, 720);
   }
 
   @Override
@@ -233,49 +188,66 @@ public class Robot extends TimedRobot
     //Move the cameras
     driverCam.look(driveControl.getPOV());
 
-    if (driveControl.getRawButton(5))
-    {
-      //Check if pistons are retracted, if yes, then extend them
-      if (solenoidOneExtended == false)
-      {
-        s1.set(true);
-        s2.set(false);
-        s3.set(true);
-        s4.set(false);
-        solenoidOneExtended = true;
-        solenoidTwoExtended = true;
-      }
-
-      //check if pistons are extended, if yes, then retract them
-      if (solenoidOneExtended == true)
-      {
-        s1.set(false);
-        s2.set(true);
-        s3.set(false);
-        s4.set(true);
-        solenoidOneExtended = false;
-        solenoidTwoExtended = false;
-      }
-    }
-
-    // Control Ramp
+    //Control Ramp
     if (driveControl.getRawButton(3))
     {
-      // Open ramp
-      // TODO: Prevent further motion if stop switch is activated
+      //Open ramp
+      //TODO: Prevent further motion if stop switch is activated
       rampMotor.set(0.8);
     }
 
     else if (driveControl.getRawButton(4))
     {
-      // Close ramp
-      // TODO: Prevent futher motion if stop switch is activated
+      //Close ramp
+      //TODO: Prevent futher motion if stop switch is activated
       rampMotor.set(-0.8);
     }
     else
     {
-      // Stop moving ramp if no button is pressed
+      //Stop moving ramp if no button is pressed
       rampMotor.set(0);
+    }
+    
+    //Move arms up
+    if (armControl.getYButton())
+    {
+      arms.moveArmsUp(0.5);
+    }
+
+    //Move arms down
+    if (armControl.getAButton())
+    {
+      arms.moveArmsDown(-0.5);
+    }
+
+    //Fetch Ball
+    if (armControl.getBumper(Hand.kRight))
+    {
+      arms.fetchBall();
+    }
+
+    //Eject Ball
+    if (armControl.getBumper(Hand.kLeft))
+    {
+      arms.ejectBall();
+    }
+
+    //Toggle Pancake Mode
+    if (armControl.getBackButton())
+    {
+      arms.togglePancakeMode();
+    }
+
+    //Eject Pancake
+    if (armControl.getStartButton())
+    {
+      try
+      {
+        arms.ejectPancake();
+      }catch(Exception e)
+      {
+        System.out.println("Time Delay Issues");
+      }
     }
   }
 }

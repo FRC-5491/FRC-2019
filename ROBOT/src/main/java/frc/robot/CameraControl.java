@@ -1,15 +1,18 @@
 package frc.robot;
 import edu.wpi.first.wpilibj.*;
 
+/**
+ * Class for controlling
+ */
 public class CameraControl
 {
-  int xAxis;
-  int yAxis;
-  double angleX;
-  double angleY;
-  Servo x;
-  Servo y;
-  int direction;
+  private int xAxis;
+  private int yAxis;
+  private double angleX;
+  private double angleY;
+  private Servo x;
+  private Servo y;
+  private int direction;
 
   public CameraControl(int xAxis, int yAxis)
   {
