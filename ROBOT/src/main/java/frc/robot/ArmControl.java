@@ -78,43 +78,43 @@ public class ArmControl
     /** 
      * Fetch Ball
      */
-    public void fetchBall() throws InterruptedException
+    public void fetchBall()
     {
-        ball.set(-0.8);
-        wait(10, 1000);
-        ball.set(0.0);
+        ball.set(-0.5);
     }
 
     /**
      * Eject Ball
      */
-    public void ejectBall() throws InterruptedException
+    public void ejectBall()
     {
-        try
-        {
-            ball.set(1.0);
-            wait(10, 1000);
-            ball.set(0.0);
-        }catch(Exception e)
-        {
-            System.out.println("Delay Issues");
-        }
+        ball.set(1.0);
     }
 
-    public void ejectPancake() throws InterruptedException
+    /**
+     * Eject Ball
+     */
+    public void stopBallMotors()
     {
-        try
-        {
-            s1.set(true);
-            wait(10, 500);
-            s1.set(false);
-            s2.set(true);
-            wait(10, 500);
-            s2.set(false);
-        }catch(Exception e)
-        {
-            System.out.println("Delay Issues");
-        }
+        ball.set(0.0);
+    }
+
+    public void ejectPancakeExtend()
+    {
+        s1.set(true);
+        s2.set(false);
+    }
+
+    public void ejectPancakeRetract()
+    {
+        s2.set(true);
+        s1.set(false);
+    }
+
+    public void ejectPancakeStop()
+    {
+        s1.set(false);
+        s2.set(false);
     }
 
 }

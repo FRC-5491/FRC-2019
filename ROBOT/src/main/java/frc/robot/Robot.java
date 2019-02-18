@@ -153,6 +153,36 @@ public class Robot extends TimedRobot
   @Override
   public void teleopPeriodic()
   { 
+
+    //GET DATA
+    double channel12I = pdu.getCurrent(12); //Get current of front left ESC
+    double channel14I = pdu.getCurrent(14); //Get current of rear left ESC
+    double channel13I = pdu.getCurrent(13); //Get current of front right ESC
+    double channel15I = pdu.getCurrent(15); //Get current of rear right ESC
+    double x = driveControl.getX(); //Get joystick x
+    double y = -driveControl.getY(); //Get joysitck y
+    double z = driveControl.getZ(); //Get joystick z
+    double aPv;
+    double aP;
+    double math;
+    double maath;
+    aPv = airPressure.getVoltage();
+    math = aPv / 5;
+    maath = 250 * math;
+    aP = maath - 25;
+
+
+    //Setup the Shuffleboard(SB)
+    SmartDashboard.putData("RobotDrive: ", robotDrive); //Add Robot Drive to SB
+    SmartDashboard.putNumber("Front Left Current: ", channel12I); //Add I draw of front left to SB
+    SmartDashboard.putNumber("Left Rear Current: ", channel14I); //Add I draw of rear left to SB
+    SmartDashboard.putNumber("Front Right Current: ", channel13I); //Add I draw of front right to SB
+    SmartDashboard.putNumber("Rear Right Current: ", channel15I); //Add I draw of rear right to SB
+    SmartDashboard.putNumber("Joystick X: ", x); //Add joystick X val to SB
+    SmartDashboard.putNumber("Joystick Y: ", y); //Add joystick Y val to SB
+    SmartDashboard.putNumber("Joystick Z: ", z);  //Add joystick Z val to SB
+    SmartDashboard.putNumber("Air Pressure", aP); //Add air pressure to SB  
+    
     double driveX = driveControl.getX(); //Get joystick x
     double driveY = -driveControl.getY(); //Get joysitck y
     double driveZ = driveControl.getZ(); //Get joystick z
@@ -189,21 +219,19 @@ public class Robot extends TimedRobot
 
     //Eject ball
     if (armControl.getBumper(Hand.kRight)) {
-      try {
-        arms.ejectBall();
-      } catch (InterruptedException e) {
-        System.out.println("TIME DELAY ISSUES");
-      }
+      arms.ejectBall();
+    } else if (armControl.getBumper(Hand.kLeft)) {
+      arms.fetchBall();
+    } else {
+      arms.stopBallMotors();
     }
 
-    //Fetch Ball
-    if (armControl.getBumper(Hand.kLeft)) {
-      try {
-        arms.fetchBall();
-      } catch (InterruptedException e) {
-        System.out.println("TIME DELAY ISSUES");
-      }
-    }
+     //Pancakes
+     if (armControl.getBButton()) {
+      arms.ejectPancakeExtend();
+     } else {
+       arms.ejectPancakeStop();
+     }
 
     //Flip Ramp
     if(driveControl.getRawButton(10)) {
@@ -213,8 +241,7 @@ public class Robot extends TimedRobot
     } else {
       rampMotor.set(0.0);
     }
-
-    
+    //END OF TELEOP PERIODIC
   }
 
   @Override public void disabledInit()
