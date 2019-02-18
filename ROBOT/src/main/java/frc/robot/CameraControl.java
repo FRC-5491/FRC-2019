@@ -1,86 +1,77 @@
 package frc.robot;
 import edu.wpi.first.wpilibj.*;
+import edu.wpi.first.wpilibj.SPI.Port;
 
 /**
- * Class for controlling
+ * Class for controlling cameras via SPI and launchpads
  */
 public class CameraControl
 {
-  private int xAxis;
-  private int yAxis;
-  private double angleX;
-  private double angleY;
-  private Servo x;
-  private Servo y;
+
   private int direction;
+  private static SPI spiTransmission = new SPI(Port.kOnboardCS0);
+  //SPI COMMAND CODES---------------------------------------------------
+  private static byte[] stopCode = new byte[0x00]; //Stop
+  private static byte[] armCamUp = new byte[0x01]; //Arm Cam Up
+  private static byte[] armCamDown = new byte[0x02]; //Arm Cam Down
+  private static byte[] armCamLeft = new byte[0x03]; //Arm Cam Left
+  private static byte[] armCamRight = new byte[0x04]; //Arm Cam Right
+  private static byte[] driverCamUp = new byte[0x05]; //Driver Cam Up
+  private static byte[] driverCamDown = new byte[0x06]; //Driver Cam Down
+  private static byte[] driverCamLeft = new byte[0x07]; //Driver Cam Left
+  private static byte[] driverCamRight = new byte[0x08]; //Driver Cam Right
 
-  public CameraControl(int xAxis, int yAxis)
+
+  public CameraControl()
   {
-    this.xAxis = xAxis;
-    this.yAxis = yAxis;
-    x = new Servo(xAxis);
-    y = new Servo(yAxis);
   }
 
-  public double getAngleX()
-  {
-    angleX = x.getAngle();
-    return angleX;
-  }
-
-  public double getAngleY()
-  {
-    angleY = y.getAngle();
-    return angleY;
-  }
-
-
-  public void look(int direction)
+  public void driverLook(int direction)
   {
     this.direction = direction;
     
     if (direction == 0)
     {
-      y.setAngle(y.getAngle() + 1);
+      spiTransmission.write(driverCamUp, 1);
     }
 
     if (direction == 45)
     {
-      x.setAngle(x.getAngle() + 1); 
-      y.setAngle(y.getAngle() + 1);
+      spiTransmission.write(driverCamRight, 1);
+      spiTransmission.write(driverCamUp, 1);
     }
 
     if (direction == 90)
     {
-      x.setAngle(x.getAngle() + 1);
+      spiTransmission.write(driverCamRight, 1);
     }
 
     if (direction == 135)
     {
-      x.setAngle(x.getAngle() + 1);
-      y.setAngle(y.getAngle() - 1);
+      spiTransmission.write(driverCamRight, 1);
+      spiTransmission.write(driverCamDown, 1);
     }
 
     if (direction == 180)
     {
-      y.setAngle(y.getAngle() - 1);
+      spiTransmission.write(driverCamDown, 1);
     }
 
     if (direction == 225)
     {
-      x.setAngle(x.getAngle() - 1);
-      y.setAngle(y.getAngle() - 1);
+      spiTransmission.write(driverCamLeft, 1);
+      spiTransmission.write(driverCamDown, 1);
     }
 
     if (direction == 270)
     {
-      x.setAngle(x.getAngle() - 1);
+      spiTransmission.write(driverCamLeft, 1);
     }
 
     if (direction == 315)
     {
-      x.setAngle(x.getAngle() - 1);
-      y.setAngle(y.getAngle() + 1);
+      spiTransmission.write(driverCamLeft, 1);
+      spiTransmission.write(driverCamUp, 1);
     }
   }
 }

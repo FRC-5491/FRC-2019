@@ -14,21 +14,14 @@ public class ArmControl
 {
     private int pwmHeight;
     private int pwmTilt;
-    private int pwmBallLeft;
-    private int pwmBallRight;
+    private int pwmBall;
     private int pcmChannelOne;
     private int pcmChannelTwo;
     private long delayTime = 10;
 
-    private int digitalIoTiltSwitch;
-
-    private double armHeightSpeed;
-    private double armTiltSpeed;
-
     private Talon height;
     private Talon tilt;
-    private PWMVictorSPX ballLeft;
-    private PWMVictorSPX ballRight;
+    private PWMVictorSPX ball;
 
     private Solenoid s1;
     private Solenoid s2;
@@ -44,64 +37,40 @@ public class ArmControl
      * 
      * @param pwmHeight PWM channel for talon controlling height.
      * @param pwmTilt PWM channel for talon controlling tilt.
-     * @param pwmBallRight PWM channel for VictorSPX controlling right ball motor.
-     * @param pwmBallLeft PWM channel for VictorSPX controlling left ball motor.
+     * @param pwmBall PWM channel for VictorSPX controlling ball motors.
      * @param pcmChannelOne PCM channel for solenoid extendtion. Defaults to PCM {@value (0)}.
      * @param pcmChannelTwo PCM channel for solenoid retraction Defaults to PCM {@value (1)}.
-     * @param digitalIoTiltSwitch Digital IO port used to check if arms are in ball mode or pancakce mode.
      * 
      */
-    public ArmControl(int pwmHeight, int pwmTilt, int pwmBallLeft, int pwmBallRight, int pcmChannelOne, int pcmChannelTwo, int digitalIoTiltSwitch)
+    public ArmControl(int pwmHeight, int pwmTilt, int pwmBall, int pcmChannelOne, int pcmChannelTwo)
     {
         this.pwmHeight = pwmHeight;
         this.pwmTilt = pwmTilt;
-        this.pwmBallLeft = pwmBallLeft;
-        this.pwmBallRight = pwmBallRight;
+        this.pwmBall = pwmBall;
         this.pcmChannelOne = pcmChannelOne;
         this.pcmChannelTwo = pcmChannelTwo;
-        this.ballLeft = new PWMVictorSPX(pwmBallLeft);
-        this.ballRight = new PWMVictorSPX(pwmBallLeft);
+        this.ball = new PWMVictorSPX(pwmBall);
         this.tilt = new Talon(pwmTilt);
         this.height = new Talon(pwmHeight);
         this.s1 = new Solenoid(pcmChannelOne);
         this.s2 = new Solenoid(pcmChannelTwo);
-        this.digitalIoTiltSwitch = digitalIoTiltSwitch;
-        this.armTiltSwitch = new DigitalInput(digitalIoTiltSwitch);
  
     }
 
     /**
-     * Move Arms Up.
+     * Move Arms
      * @param armHeightSpeed (Double) Speed of arm movement. 
      */
-    public void moveArmsUp(double armHeightSpeed)
+    public void moveArms(double armHeightSpeed)
     {
         height.set(armHeightSpeed);
     }
 
     /**
-     * Move Arms Down.
-     * @param armHeightSpeed (Double) Speed of arm movement. Must be a negative value 
-     */
-    public void moveArmsDown(double armHeightSpeed)
-    {
-        height.set(armHeightSpeed);
-    }
-
-    /**
-     * Tilt Arms Up
+     * Tilt Arms
      * @param armTiltSpeed (Double) Speed of arm movement.
      */
-    public void tiltArmsUp(double armTiltSpeed)
-    {
-        tilt.set(armTiltSpeed);
-    }
-
-    /**
-     * Tilt Arms Down
-     * @param armTiltSpeed (Double) Speed of arm movement. Must be a negative value
-     */
-    public void tiltArmsDown(double armTiltSpeed)
+    public void tiltArms(double armTiltSpeed)
     {
         tilt.set(armTiltSpeed);
     }
@@ -109,26 +78,26 @@ public class ArmControl
     /** 
      * Fetch Ball
      */
-    public void fetchBall()
+    public void fetchBall() throws InterruptedException
     {
-        ballLeft.set(0.8);
-        ballRight.set(0.8);
+        ball.set(-0.8);
+        wait(10, 1000);
+        ball.set(0.0);
     }
 
     /**
      * Eject Ball
      */
-    public void ejectBall()
+    public void ejectBall() throws InterruptedException
     {
-        ballLeft.set(-1.0);
-        ballRight.set(1.0);
-    }
-
-    public void togglePancakeMode()
-    {
-        while(armTiltSwitch.get() == true)
+        try
         {
-            tilt.set(0.5);
+            ball.set(1.0);
+            wait(10, 1000);
+            ball.set(0.0);
+        }catch(Exception e)
+        {
+            System.out.println("Delay Issues");
         }
     }
 
