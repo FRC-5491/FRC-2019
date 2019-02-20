@@ -41,13 +41,22 @@ public class Robot extends TimedRobot
   private static final int PWM_FRONT_RIGHT = 2; //Rear Right (PWM 2)
   private static final int PWM_REAR_RIGHT = 3; //Rear Left (PWM 3)
 
-  //PWM Connections for Arm Control
-  private static final int PWM_ARM_HEIGHT = 7;
-  private static final int PWM_ARM_TILT = 8;
-  private static final int PWM_ARM_BALL = 9;
-
   //PWM RAMP MOTOR
-  private static final int PWM_RAMP_MOTOR = 6;
+  private static final int PWM_RAMP_MOTOR = 4;
+
+  //PWM Connections for Arm Control
+  private static final int PWM_ARM_HEIGHT = 7; //Arm Height Up/Down
+  private static final int PWM_ARM_TILT = 8; //Arm Tilt Up/Down
+  private static final int PWM_ARM_BALL = 9; //Fetch/Eject Ball
+
+
+  //PWM Connections for cameras -- These are on the MXP PORT
+  private static final int DRIVE_CAM_X = 10; //Drive cam servo x -- MXP 11
+  private static final int DRIVE_CAM_Y = 11; //Driver cam servo y -- MXP 13
+  private static final int ARM_CAM_X = 12; //Arm cam servo x -- MXP 15
+  private static final int ARM_CAM_Y = 13; //Arm cam servo y -- MXP 17
+
+  
 
   // PCM Connections for Solenoids
   private static final int PCM_ARM_EJECT_ONE = 0;
@@ -67,31 +76,36 @@ public class Robot extends TimedRobot
   private Spark rearRight = new Spark(PWM_REAR_RIGHT); //Rear Right ESC
   
   //Create the drive object
-  private MecanumDrive robotDrive = new MecanumDrive(frontLeft, rearLeft, frontRight, rearRight);
+  private MecanumDrive robotDrive = new MecanumDrive(frontLeft, rearLeft, frontRight, rearRight); //Drive Control Object
 
   //Create the ramp ESC
-  private Talon rampMotor = new Talon(PWM_RAMP_MOTOR);
+  private Talon rampMotor = new Talon(PWM_RAMP_MOTOR); //Ramp ESC
+
   //Joysticks/Controllers
   private Joystick driveControl = new Joystick(0); //Movement and Driver Camera Control
   private XboxController armControl = new XboxController(1); //Arms and Arm Camera Control
 
-  //Hands
+  //Cameras
+  private CameraControl driverCam = new CameraControl(DRIVE_CAM_X, DRIVE_CAM_Y); //Driver cam control
+  private CameraControl armCam = new CameraControl(ARM_CAM_X, ARM_CAM_Y); //Arm cam control
+ 
   //Timer Objects
   private Timer timer = new Timer();
 
   //Power Distribution Board
-  public static PowerDistributionPanel pdu = new PowerDistributionPanel(0);
+  public static PowerDistributionPanel pdu = new PowerDistributionPanel(0); //PDU on CANBUS 0
 
   //Pneumatics
   public static Compressor c = new Compressor(0); //Air Compressor
   AnalogInput airPressure = new AnalogInput(0); //Pressure readings
+
+  DigitalInput switch1 = new DigitalInput(0); // Limit Switch 1
+  DigitalInput switch2 = new DigitalInput(1); // Limit Switch 2
   
   public static int egg = 0; //EDUCATION
 
   //Arm Control
-  public static ArmControl arms = new ArmControl(
-    PWM_ARM_HEIGHT, PWM_ARM_TILT, PWM_ARM_BALL, 
-    PCM_ARM_EJECT_ONE, PCM_ARM_EJECT_TWO);
+  public static ArmControl arms = new ArmControl(PWM_ARM_HEIGHT, PWM_ARM_TILT, PWM_ARM_BALL, PCM_ARM_EJECT_ONE, PCM_ARM_EJECT_TWO); //Arm Control Object
 
   //BEGIN ROBOT CODE --------------------------------------------------------------
 
@@ -109,6 +123,8 @@ public class Robot extends TimedRobot
     double x = driveControl.getX(); //Get joystick x
     double y = -driveControl.getY(); //Get joysitck y
     double z = driveControl.getZ(); //Get joystick z
+    
+    //Calculate Air Pressure
     double aPv;
     double aP;
     double math;
@@ -162,6 +178,8 @@ public class Robot extends TimedRobot
     double x = driveControl.getX(); //Get joystick x
     double y = -driveControl.getY(); //Get joysitck y
     double z = driveControl.getZ(); //Get joystick z
+    
+    //Calculate Air Pressure
     double aPv;
     double aP;
     double math;
@@ -181,7 +199,10 @@ public class Robot extends TimedRobot
     SmartDashboard.putNumber("Joystick X: ", x); //Add joystick X val to SB
     SmartDashboard.putNumber("Joystick Y: ", y); //Add joystick Y val to SB
     SmartDashboard.putNumber("Joystick Z: ", z);  //Add joystick Z val to SB
-    SmartDashboard.putNumber("Air Pressure", aP); //Add air pressure to SB  
+    SmartDashboard.putNumber("Air Pressure", aP); //Add air pressure to SB
+    
+    SmartDashboard.putBoolean("Switch 1", switch1.get());
+    SmartDashboard.putBoolean("Switch 2", switch2.get());
     
     double driveX = driveControl.getX(); //Get joystick x
     double driveY = -driveControl.getY(); //Get joysitck y
@@ -209,9 +230,9 @@ public class Robot extends TimedRobot
     }
 
     //Tilt the arms
-    if (armControl.getYButton()) {
+    if (armTriggerL > 0.25) {
       arms.tiltArms(0.5);
-    } else if (armControl.getAButton()) {
+    } else if (armtriggerR > 0.25 && switch1.get()) {
       arms.tiltArms(-0.5);
     } else {
       arms.tiltArms(0.0);
@@ -229,15 +250,17 @@ public class Robot extends TimedRobot
      //Pancakes
      if (armControl.getBButton()) {
       arms.ejectPancakeExtend();
+     } else if (armControl.getYButton()){
+       arms.ejectPancakeRetract();
      } else {
        arms.ejectPancakeStop();
      }
 
     //Flip Ramp
     if(driveControl.getRawButton(10)) {
-      rampMotor.set(0.9);
+      rampMotor.set(1.0);
     } else if (driveControl.getRawButton(11)) {
-      rampMotor.set(-0.9);
+      rampMotor.set(-1.0);
     } else {
       rampMotor.set(0.0);
     }
@@ -245,7 +268,7 @@ public class Robot extends TimedRobot
   }
 
   @Override public void disabledInit()
-  {
+  {    
     
   }
 }

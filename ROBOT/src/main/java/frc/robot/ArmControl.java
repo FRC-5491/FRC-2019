@@ -35,11 +35,11 @@ public class ArmControl
      * "pwmBallLeft" and "pwmBallRight". Creates two solenoid objects on
      * PCM channels "pcmChannelOne" and "pcmChannelTwo".
      * 
-     * @param pwmHeight PWM channel for talon controlling height.
-     * @param pwmTilt PWM channel for talon controlling tilt.
-     * @param pwmBall PWM channel for VictorSPX controlling ball motors.
-     * @param pcmChannelOne PCM channel for solenoid extendtion. Defaults to PCM {@value (0)}.
-     * @param pcmChannelTwo PCM channel for solenoid retraction Defaults to PCM {@value (1)}.
+     * @param pwmHeight (Int) PWM channel for talon controlling height.
+     * @param pwmTilt (Int) PWM channel for talon controlling tilt.
+     * @param pwmBall (Int) PWM channel for VictorSPX controlling ball motors.
+     * @param pcmChannelOne (Int) PCM channel for solenoid extendtion. Defaults to PCM {@value (0)}.
+     * @param pcmChannelTwo (Int) PCM channel for solenoid retraction Defaults to PCM {@value (1)}.
      * 
      */
     public ArmControl(int pwmHeight, int pwmTilt, int pwmBall, int pcmChannelOne, int pcmChannelTwo)
@@ -107,8 +107,8 @@ public class ArmControl
 
     public void ejectPancakeRetract()
     {
-        s2.set(true);
         s1.set(false);
+        s2.set(true);
     }
 
     public void ejectPancakeStop()
