@@ -11,7 +11,7 @@
 /*| orignal authors, and if the distributer specifies that changes were  |*/
 /*| to the original program.                                             |*/
 /*+----------------------------------------------------------------------|*/
-/*| Hours wasted on writing this code: 17                                |*/
+/*| Hours wasted on writing this code: 170                                |*/
 /*+----------------------------------------------------------------------+*/
 
 
@@ -99,8 +99,10 @@ public class Robot extends TimedRobot
   public static Compressor c = new Compressor(0); //Air Compressor
   AnalogInput airPressure = new AnalogInput(0); //Pressure readings
 
-  DigitalInput switch1 = new DigitalInput(0); // Limit Switch 1
-  DigitalInput switch2 = new DigitalInput(1); // Limit Switch 2
+  DigitalInput switchArmTiltTop = new DigitalInput(0); // Limit Switch 1
+  DigitalInput switchArmHeightTop_ArmMounted = new DigitalInput(1); // Limit Switch 2
+  DigitalInput switchArmHeightBottom = new DigitalInput(2); // Limit Switch 3
+  DigitalInput switchArmHeightTop_SideMounted = new DigitalInput(3);
   
   public static int egg = 0; //EDUCATION
 
@@ -158,51 +160,19 @@ public class Robot extends TimedRobot
   public void autonomousPeriodic()
   {
     //DON'T PUT THINGS IN HERE
+    updateSmartDashboard();
   }
 
   @Override
   public void teleopInit()
-  {int e;
+  {
     
   }
   
   @Override
   public void teleopPeriodic()
   { 
-
-    //GET DATA
-    double channel12I = pdu.getCurrent(12); //Get current of front left ESC
-    double channel14I = pdu.getCurrent(14); //Get current of rear left ESC
-    double channel13I = pdu.getCurrent(13); //Get current of front right ESC
-    double channel15I = pdu.getCurrent(15); //Get current of rear right ESC
-    double x = driveControl.getX(); //Get joystick x
-    double y = -driveControl.getY(); //Get joysitck y
-    double z = driveControl.getZ(); //Get joystick z
-    
-    //Calculate Air Pressure
-    double aPv;
-    double aP;
-    double math;
-    double maath;
-    aPv = airPressure.getVoltage();
-    math = aPv / 5;
-    maath = 250 * math;
-    aP = maath - 25;
-
-
-    //Setup the Shuffleboard(SB)
-    SmartDashboard.putData("RobotDrive: ", robotDrive); //Add Robot Drive to SB
-    SmartDashboard.putNumber("Front Left Current: ", channel12I); //Add I draw of front left to SB
-    SmartDashboard.putNumber("Left Rear Current: ", channel14I); //Add I draw of rear left to SB
-    SmartDashboard.putNumber("Front Right Current: ", channel13I); //Add I draw of front right to SB
-    SmartDashboard.putNumber("Rear Right Current: ", channel15I); //Add I draw of rear right to SB
-    SmartDashboard.putNumber("Joystick X: ", x); //Add joystick X val to SB
-    SmartDashboard.putNumber("Joystick Y: ", y); //Add joystick Y val to SB
-    SmartDashboard.putNumber("Joystick Z: ", z);  //Add joystick Z val to SB
-    SmartDashboard.putNumber("Air Pressure", aP); //Add air pressure to SB
-    
-    SmartDashboard.putBoolean("Switch 1", switch1.get());
-    SmartDashboard.putBoolean("Switch 2", switch2.get());
+    updateSmartDashboard();
     
     double driveX = driveControl.getX(); //Get joystick x
     double driveY = -driveControl.getY(); //Get joysitck y
@@ -221,9 +191,9 @@ public class Robot extends TimedRobot
     robotDrive.driveCartesian(driveX, driveY, driveZ);
 
     //Move the arms
-    if(armLeftY >= 0.15) {
+    if(armLeftY >= 0.15 && !(switchArmHeightTop_ArmMounted.get() && switchArmHeightTop_SideMounted.get())){
       arms.moveArms(armLeftY);
-    } else if (armLeftY <= -0.15) {
+    } else if (armLeftY <= -0.15 && switchArmHeightBottom.get()) {
       arms.moveArms(armLeftY);
     } else {
       arms.moveArms(0.0);
@@ -232,7 +202,7 @@ public class Robot extends TimedRobot
     //Tilt the arms
     if (armTriggerL > 0.25) {
       arms.tiltArms(0.5);
-    } else if (armtriggerR > 0.25 && switch1.get()) {
+    } else if (armtriggerR > 0.25 && switchArmTiltTop.get()){
       arms.tiltArms(-0.5);
     } else {
       arms.tiltArms(0.0);
@@ -270,5 +240,43 @@ public class Robot extends TimedRobot
   @Override public void disabledInit()
   {    
     
+  }
+
+  private void updateSmartDashboard() {
+    //GET DATA
+    double channel12I = pdu.getCurrent(12); //Get current of front left ESC
+    double channel14I = pdu.getCurrent(14); //Get current of rear left ESC
+    double channel13I = pdu.getCurrent(13); //Get current of front right ESC
+    double channel15I = pdu.getCurrent(15); //Get current of rear right ESC
+    double x = driveControl.getX(); //Get joystick x
+    double y = -driveControl.getY(); //Get joysitck y
+    double z = driveControl.getZ(); //Get joystick z
+    
+    //Calculate Air Pressure
+    double aPv;
+    double aP;
+    double math;
+    double maath;
+    aPv = airPressure.getVoltage();
+    math = aPv / 5;
+    maath = 250 * math;
+    aP = maath - 25;
+
+
+    //Setup the Shuffleboard(SB)
+    SmartDashboard.putData("RobotDrive: ", robotDrive); //Add Robot Drive to SB
+    SmartDashboard.putNumber("Front Left Current: ", channel12I); //Add I draw of front left to SB
+    SmartDashboard.putNumber("Left Rear Current: ", channel14I); //Add I draw of rear left to SB
+    SmartDashboard.putNumber("Front Right Current: ", channel13I); //Add I draw of front right to SB
+    SmartDashboard.putNumber("Rear Right Current: ", channel15I); //Add I draw of rear right to SB
+    SmartDashboard.putNumber("Joystick X: ", x); //Add joystick X val to SB
+    SmartDashboard.putNumber("Joystick Y: ", y); //Add joystick Y val to SB
+    SmartDashboard.putNumber("Joystick Z: ", z);  //Add joystick Z val to SB
+    SmartDashboard.putNumber("Air Pressure", aP); //Add air pressure to SB
+    
+    SmartDashboard.putBoolean("Switch 1 (arm tilt)", switchArmTiltTop.get());
+    SmartDashboard.putBoolean("Switch 2 (arm height top, arm mounted)", switchArmHeightTop_ArmMounted.get());
+    SmartDashboard.putBoolean("Switch 3 (arm height bottom", switchArmHeightBottom.get());
+    SmartDashboard.putBoolean("Switch 4 (arm height top, side mounted)", switchArmHeightTop_SideMounted.get());
   }
 }
