@@ -26,6 +26,8 @@ public class CameraControl
     this.PWMY = PWMY;
     x = new Servo(PWMX);
     y = new Servo(PWMY);
+    x.setAngle(90);
+    y.setAngle(90);
   }
 
   /**

@@ -11,7 +11,7 @@
 /*| orignal authors, and if the distributer specifies that changes were  |*/
 /*| to the original program.                                             |*/
 /*+----------------------------------------------------------------------|*/
-/*| Hours wasted on writing this code: 170                                |*/
+/*| Hours wasted on writing this code: 178                                |*/
 /*+----------------------------------------------------------------------+*/
 
 
@@ -21,7 +21,6 @@ package frc.robot; //Package Declaration(I think thats what this...)
 
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
-import edu.wpi.first.wpilibj.I2C.Port;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.*;
 import frc.robot.CameraControl;
@@ -51,8 +50,8 @@ public class Robot extends TimedRobot
 
 
   //PWM Connections for cameras -- These are on the MXP PORT
-  private static final int DRIVE_CAM_X = 10; //Drive cam servo x -- MXP 11
-  private static final int DRIVE_CAM_Y = 11; //Driver cam servo y -- MXP 13
+  private static final int DRIVE_CAM_X = 5; //Drive cam servo x -- MXP 11
+  private static final int DRIVE_CAM_Y = 6; //Driver cam servo y -- MXP 13
   private static final int ARM_CAM_X = 12; //Arm cam servo x -- MXP 15
   private static final int ARM_CAM_Y = 13; //Arm cam servo y -- MXP 17
 
@@ -172,6 +171,8 @@ public class Robot extends TimedRobot
   @Override
   public void teleopPeriodic()
   { 
+
+    driverCam.look(driveControl.getPOV());
     updateSmartDashboard();
     
     double driveX = driveControl.getX(); //Get joystick x
@@ -191,8 +192,14 @@ public class Robot extends TimedRobot
     robotDrive.driveCartesian(driveX, driveY, driveZ);
 
     //Move the arms
-    if(armLeftY >= 0.15 && !(switchArmHeightTop_ArmMounted.get() && switchArmHeightTop_SideMounted.get())){
-      arms.moveArms(armLeftY);
+    if(armLeftY >= 0.15 && switchArmHeightTop_ArmMounted.get() || switchArmHeightTop_SideMounted.get()){
+      if (switchArmHeightTop_ArmMounted.get() && switchArmHeightTop_SideMounted.get()) 
+      {//Full Speed, No switches pressed
+        arms.moveArms(armLeftY);
+      }else{
+        //Half speed, one switch pressed
+        arms.moveArms(armLeftY / 2);
+      }
     } else if (armLeftY <= -0.15 && switchArmHeightBottom.get()) {
       arms.moveArms(armLeftY);
     } else {
