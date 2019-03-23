@@ -80,7 +80,7 @@ public class ArmControl
      */
     public void fetchBall()
     {
-        ball.set(-0.5);
+        ball.set(-1);
     }
 
     /**

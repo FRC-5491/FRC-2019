@@ -21,6 +21,7 @@ package frc.robot; //Package Declaration(I think thats what this...)
 
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.*;
 import frc.robot.CameraControl;
@@ -32,7 +33,7 @@ public class Robot extends TimedRobot
   //VARIABLE DECLARATION ---------------------------------------------------
 
   //JOYSTICK DEADBAND
-  private static final double DEADBAND = 0.05;
+  private static final double DEADBAND = 0.1;
 
   //PWM Connections for Mecanum Drive
   private static final int PWM_FRONT_LEFT = 0; //Front Left (PWM 0)
@@ -41,29 +42,24 @@ public class Robot extends TimedRobot
   private static final int PWM_REAR_RIGHT = 3; //Rear Left (PWM 3)
 
   //PWM RAMP MOTOR
-  private static final int PWM_RAMP_MOTOR = 4;
+  private static final int PWM_RAMP_MOTOR = 4; //Ramp motor (PWM 4)
 
   //PWM Connections for Arm Control
-  private static final int PWM_ARM_HEIGHT = 7; //Arm Height Up/Down
+  private static final int PWM_ARM_HEIGHT = 7; //Arm Height Up/Down 
   private static final int PWM_ARM_TILT = 8; //Arm Tilt Up/Down
   private static final int PWM_ARM_BALL = 9; //Fetch/Eject Ball
 
 
   //PWM Connections for cameras -- These are on the MXP PORT
-  private static final int DRIVE_CAM_X = 5; //Drive cam servo x -- MXP 11
-  private static final int DRIVE_CAM_Y = 6; //Driver cam servo y -- MXP 13
-  private static final int ARM_CAM_X = 12; //Arm cam servo x -- MXP 15
-  private static final int ARM_CAM_Y = 13; //Arm cam servo y -- MXP 17
-
-  
+  private static final int DRIVE_CAM_X = 5; //Drive cam servo x PWM 5
+  private static final int DRIVE_CAM_Y = 6; //Driver cam servo y PWM 6
 
   // PCM Connections for Solenoids
-  private static final int PCM_ARM_EJECT_ONE = 0;
-  private static final int PCM_ARM_EJECT_TWO = 1;
+  private static final int PCM_ARM_EJECT_ONE = 1;
+  private static final int PCM_ARM_EJECT_TWO = 0;
 
   // Digital IO Connections
   private static final int DIG_IO_TILT_SWITCH = 0;
-  
   
 
   //OBJECT CREATION -----------------------------------------------------
@@ -74,8 +70,10 @@ public class Robot extends TimedRobot
   private Spark frontRight = new Spark(PWM_FRONT_RIGHT); //Front Right ESC
   private Spark rearRight = new Spark(PWM_REAR_RIGHT); //Rear Right ESC
   
+  // private SpeedControllerGroup left = new SpeedControllerGroup(frontLeft, rearLeft);
+  // private SpeedControllerGroup right = new SpeedControllerGroup(frontRight, rearRight);
   //Create the drive object
-  private MecanumDrive robotDrive = new MecanumDrive(frontLeft, rearLeft, frontRight, rearRight); //Drive Control Object
+  private MecanumDrive robotDrive = new MecanumDrive(frontLeft, rearLeft, frontRight, rearRight);
 
   //Create the ramp ESC
   private Talon rampMotor = new Talon(PWM_RAMP_MOTOR); //Ramp ESC
@@ -86,8 +84,7 @@ public class Robot extends TimedRobot
 
   //Cameras
   private CameraControl driverCam = new CameraControl(DRIVE_CAM_X, DRIVE_CAM_Y); //Driver cam control
-  private CameraControl armCam = new CameraControl(ARM_CAM_X, ARM_CAM_Y); //Arm cam control
- 
+
   //Timer Objects
   private Timer timer = new Timer();
 
@@ -98,6 +95,7 @@ public class Robot extends TimedRobot
   public static Compressor c = new Compressor(0); //Air Compressor
   AnalogInput airPressure = new AnalogInput(0); //Pressure readings
 
+  //ALL INPUTS ARE INPUT PULLUP... TRUE == OFF
   DigitalInput switchArmTiltTop = new DigitalInput(0); // Limit Switch 1
   DigitalInput switchArmHeightTop_ArmMounted = new DigitalInput(1); // Limit Switch 2
   DigitalInput switchArmHeightBottom = new DigitalInput(2); // Limit Switch 3
@@ -108,8 +106,20 @@ public class Robot extends TimedRobot
   //Arm Control
   public static ArmControl arms = new ArmControl(PWM_ARM_HEIGHT, PWM_ARM_TILT, PWM_ARM_BALL, PCM_ARM_EJECT_ONE, PCM_ARM_EJECT_TWO); //Arm Control Object
 
+  //HID Device Values ------------------------------------------------------------
+  private double driveX;
+  private double driveY;
+  private double driveZ;
+  private double armLeftX;
+  private double armRightX;
+  private double armLeftY;
+  private double armRightY;
+  private double armTriggerR;
+  private double armTriggerL;
+  private boolean armBumperL;
+  
   //BEGIN ROBOT CODE --------------------------------------------------------------
-
+  //-------------------------------------------------------------------------------------------
   @Override
   public void robotInit()
   {
@@ -147,108 +157,46 @@ public class Robot extends TimedRobot
     SmartDashboard.putNumber("Joystick Z: ", z);  //Add joystick Z val to SB
     SmartDashboard.putNumber("Air Pressure", aP); //Add air pressure to SB  
   }
-
+  //-------------------------------------------------------------------------------------------
   @Override
   public void autonomousInit()
   {
     timer.reset(); //Reset the timer
-    timer.start(); //Start the timer
+    timer.start(); //Sta                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   cccccccccccc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    x                                       rt the timer
+    getHIDInputValues();
+    updateSmartDashboard();
   }
-
+  //-------------------------------------------------------------------------------------------
   @Override
   public void autonomousPeriodic()
   {
     //DON'T PUT THINGS IN HERE
+    getHIDInputValues();
     updateSmartDashboard();
+    robotActions();
+    
   }
-
+  //-------------------------------------------------------------------------------------------
   @Override
   public void teleopInit()
   {
-    
+    getHIDInputValues();
+    updateSmartDashboard();
   }
-  
+  //-------------------------------------------------------------------------------------------
   @Override
   public void teleopPeriodic()
   { 
-
-    driverCam.look(driveControl.getPOV());
+    getHIDInputValues();
     updateSmartDashboard();
-    
-    double driveX = driveControl.getX(); //Get joystick x
-    double driveY = -driveControl.getY(); //Get joysitck y
-    double driveZ = driveControl.getZ(); //Get joystick z
-
-    double armLeftX = armControl.getX(Hand.kLeft); //Get xbox LS x
-    double armLeftY = -armControl.getY(Hand.kLeft); //Get xbox LS y
-    
-    double armRightX = armControl.getX(Hand.kRight); //Get xbox RS x
-    double armRightY = -armControl.getY(Hand.kRight); //Get xbox RS y
-
-    double armTriggerL = armControl.getTriggerAxis(Hand.kLeft); //Get xbox LT val
-    double armtriggerR = armControl.getTriggerAxis(Hand.kRight); //Get xbox RT val
-
-    //Move the robot
-    robotDrive.driveCartesian(driveX, driveY, driveZ);
-
-    //Move the arms
-    if(armLeftY >= 0.15 && switchArmHeightTop_ArmMounted.get() || switchArmHeightTop_SideMounted.get()){
-      if (switchArmHeightTop_ArmMounted.get() && switchArmHeightTop_SideMounted.get()) 
-      {//Full Speed, No switches pressed
-        arms.moveArms(armLeftY);
-      }else{
-        //Half speed, one switch pressed
-        arms.moveArms(armLeftY / 2);
-      }
-    } else if (armLeftY <= -0.15 && switchArmHeightBottom.get()) {
-      arms.moveArms(armLeftY);
-    } else {
-      arms.moveArms(0.0);
-    }
-
-    //Tilt the arms
-    if (armTriggerL > 0.25) {
-      arms.tiltArms(0.5);
-    } else if (armtriggerR > 0.25 && switchArmTiltTop.get()){
-      arms.tiltArms(-0.5);
-    } else {
-      arms.tiltArms(0.0);
-    }
-
-    //Eject ball
-    if (armControl.getBumper(Hand.kRight)) {
-      arms.ejectBall();
-    } else if (armControl.getBumper(Hand.kLeft)) {
-      arms.fetchBall();
-    } else {
-      arms.stopBallMotors();
-    }
-
-     //Pancakes
-     if (armControl.getBButton()) {
-      arms.ejectPancakeExtend();
-     } else if (armControl.getYButton()){
-       arms.ejectPancakeRetract();
-     } else {
-       arms.ejectPancakeStop();
-     }
-
-    //Flip Ramp
-    if(driveControl.getRawButton(10)) {
-      rampMotor.set(1.0);
-    } else if (driveControl.getRawButton(11)) {
-      rampMotor.set(-1.0);
-    } else {
-      rampMotor.set(0.0);
-    }
-    //END OF TELEOP PERIODIC
+    robotActions();
   }
-
+  //-------------------------------------------------------------------------------------------
   @Override public void disabledInit()
   {    
     
   }
-
+  //-------------------------------------------------------------------------------------------
   private void updateSmartDashboard() {
     //GET DATA
     double channel12I = pdu.getCurrent(12); //Get current of front left ESC
@@ -280,10 +228,89 @@ public class Robot extends TimedRobot
     SmartDashboard.putNumber("Joystick Y: ", y); //Add joystick Y val to SB
     SmartDashboard.putNumber("Joystick Z: ", z);  //Add joystick Z val to SB
     SmartDashboard.putNumber("Air Pressure", aP); //Add air pressure to SB
-    
     SmartDashboard.putBoolean("Switch 1 (arm tilt)", switchArmTiltTop.get());
     SmartDashboard.putBoolean("Switch 2 (arm height top, arm mounted)", switchArmHeightTop_ArmMounted.get());
     SmartDashboard.putBoolean("Switch 3 (arm height bottom", switchArmHeightBottom.get());
     SmartDashboard.putBoolean("Switch 4 (arm height top, side mounted)", switchArmHeightTop_SideMounted.get());
+    SmartDashboard.putNumber("ArmTriggerL", armTriggerL);
   }
+  //------------------------------------------------------------------------------------------
+  private void getHIDInputValues() {
+    driveX = driveControl.getX(); //Get joystick x
+    driveY = -driveControl.getY(); //Get joysitck y
+    driveZ = driveControl.getZ(); //Get joystick z
+
+    armLeftX = armControl.getX(Hand.kLeft); //Get xbox LS x
+    armLeftY = -armControl.getY(Hand.kLeft); //Get xbox LS y
+    
+    armRightX = armControl.getX(Hand.kRight); //Get xbox RS x
+    armRightY = -armControl.getY(Hand.kRight); //Get xbox RS y
+
+    armTriggerL = armControl.getTriggerAxis(Hand.kLeft); //Get xbox LT val
+    armTriggerR = armControl.getTriggerAxis(Hand.kRight); //Get xbox RT val
+    
+    armBumperL = armControl.getBumper(Hand.kLeft);
+
+  }
+  //------------------------------------------------------------------------------------------
+  private void robotActions() {
+    driverCam.look(driveControl.getPOV());
+    //Move the robot
+    robotDrive.driveCartesian(driveX, driveY, driveZ);
+
+    //Move the arms
+    if(armLeftY >= 0.15 && switchArmHeightTop_ArmMounted.get() || switchArmHeightTop_SideMounted.get()){
+      if (switchArmHeightTop_ArmMounted.get() && switchArmHeightTop_SideMounted.get()) {
+        //Full Speed, No switches pressed
+        arms.moveArms(armLeftY);
+      }else{
+        // One switch pressed - we're close to the top. Slow way down
+        arms.moveArms(armLeftY / 4);
+      }
+    } else if (armLeftY <= -0.15 && switchArmHeightBottom.get()) {
+      arms.moveArms(armLeftY);
+    } else {
+      arms.moveArms(0.0);
+    }
+
+    //Tilt the arms
+    if (armRightY < -0.15) {
+      // must make armRight into a positive number to make it go down
+      arms.tiltArms(-armRightY /2);
+    } else if (armRightY > 0.15 && switchArmTiltTop.get()){
+      // need to negate armRight in order to tilt arm up
+      arms.tiltArms(-armRightY / 2);
+    } else {
+      arms.tiltArms(0.0);
+    }
+
+    //Eject ball
+    if (armTriggerR > 0.25) {
+      arms.ejectBall();
+    } else if (armControl.getBumper(Hand.kRight)) {
+      arms.fetchBall();
+    } else {
+      arms.stopBallMotors();
+    }
+
+     //Pancakes
+     if (armBumperL == true) {
+      arms.ejectPancakeExtend();
+      System.out.println("pancake eject");
+     //} else if (armControl.getYButton()){
+       //arms.ejectPancakeRetract();
+     } else {
+       arms.ejectPancakeStop();
+     }
+
+    //Flip Ramp
+    if(armControl.getBButton()) {
+      rampMotor.set(1.0);
+    } else if (armControl.getXButton()) {
+      rampMotor.set(-1.0);
+    } else {
+      rampMotor.set(0.0);
+    }
+  }
+  //-------------------------------------------------------------------------------------------
 }
