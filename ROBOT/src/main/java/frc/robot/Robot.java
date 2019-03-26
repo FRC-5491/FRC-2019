@@ -16,8 +16,6 @@
 /*| orignal authors, and if the distributer specifies that changes were  |*/
 /*| to the original program.                                             |*/
 /*+----------------------------------------------------------------------|*/
-/*| Hours wasted on writing this code: 178                                |*/
-/*+----------------------------------------------------------------------+*/
 
 
 package frc.robot; //Package Declaration(I think thats what this...)
@@ -26,7 +24,6 @@ package frc.robot; //Package Declaration(I think thats what this...)
 
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.*;
 import frc.robot.CameraControl;
