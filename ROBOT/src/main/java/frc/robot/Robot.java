@@ -3,7 +3,12 @@
 /*| Written for Team 5491's 2019 DESTINATION: DEEP SPACE FRC Competition |*/
 /*| and used on their robot, Johnny.                                     |*/
 /*+----------------------------------------------------------------------+*/
-/*| Author(s): Jack Pirone, Kathryn Adinolfi, Julien Blanchet            |*/
+/*| Author(s): Jack Pirone,                                              |*/
+/*| Kathryn Adinolfi, Julien Blanchet                                    |*/
+/*+----------------------------------------------------------------------+*/
+/*| That human who fixed the autonomus method: Kelly Ostrom (Nutrons 125)|*/
+/*+----------------------------------------------------------------------+*/
+/*| Zip Tie Supplier: Henry/Hank Aumiller(Nutrons 125)                   |*/
 /*+----------------------------------------------------------------------+*/
 /*| Copyright: Jack Pirone, 2019. SEE BELOW                              |*/
 /*| This is free sotware.                                                |*/
@@ -252,11 +257,12 @@ public class Robot extends TimedRobot
     armBumperL = armControl.getBumper(Hand.kLeft);
 
   }
-  //------------------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------------------x 
   private void robotActions() {
     driverCam.look(driveControl.getPOV());
     //Move the robot
-    robotDrive.driveCartesian(driveX, driveY, driveZ);
+    robotDrive.driveCartesian(0.0, driveY, driveX);
+    //robotDrive.driveCartesian(driveX, driveY, driveZ);
 
     //Move the arms
     if(armLeftY >= 0.15 && switchArmHeightTop_ArmMounted.get() || switchArmHeightTop_SideMounted.get()){
@@ -314,3 +320,4 @@ public class Robot extends TimedRobot
   }
   //-------------------------------------------------------------------------------------------
 }
+
