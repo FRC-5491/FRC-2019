@@ -4,7 +4,8 @@
 /*| and used on their robot, Johnny.                                     |*/
 /*+----------------------------------------------------------------------+*/
 /*| Author(s): Jack Pirone,                                              |*/
-/*| Kathryn Adinolfi, Julien Blanchet                                    |*/
+/*+----------------------------------------------------------------------+*/
+/*| Pretty ok people: Kathryn Adinolfi, Julien Blanchet                  |*/
 /*+----------------------------------------------------------------------+*/
 /*| That human who fixed the autonomus method: Kelly Ostrom (Nutrons 125)|*/
 /*+----------------------------------------------------------------------+*/
@@ -170,7 +171,7 @@ public class Robot extends TimedRobot
     SmartDashboard.putNumber("Joystick Z: ", z);  //Add joystick Z val to SB
     SmartDashboard.putNumber("Air Pressure", aP); //Add air pressure to SB  
 
-    //VISION THINGS
+    //VISION THINGS -- Detects orange balls
     UsbCamera visionCam = CameraServer.getInstance().startAutomaticCapture();
     visionCam.setResolution(IMG_WIDTH, IMG_HEIGHT);
     visionThread = new VisionThread(visionCam, new BallDetection(), pipeline -> {
@@ -202,6 +203,8 @@ public class Robot extends TimedRobot
     getHIDInputValues();
     updateSmartDashboard();
     robotActions();
+
+    //While A button is pressed, orient robot to face the ball
     if (armControl.getAButton())
     {
       synchronized (imageLock)
