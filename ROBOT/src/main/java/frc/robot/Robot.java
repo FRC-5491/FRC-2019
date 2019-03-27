@@ -43,22 +43,18 @@ public class Robot extends TimedRobot
   private static final int PWM_FRONT_RIGHT = 2; //Rear Right (PWM 2)
   private static final int PWM_REAR_RIGHT = 3; //Rear Left (PWM 3)
 
-  //PWM RAMP MOTOR
-  private static final int PWM_RAMP_MOTOR = 4; //Ramp motor (PWM 4)
-
   //PWM Connections for Arm Control
   private static final int PWM_ARM_HEIGHT = 7; //Arm Height Up/Down 
   private static final int PWM_ARM_TILT = 8; //Arm Tilt Up/Down
   private static final int PWM_ARM_BALL = 9; //Fetch/Eject Ball
 
 
-  //PWM Connections for cameras -- These are on the MXP PORT
+  //PWM Connections for IP Cam
   private static final int DRIVE_CAM_X = 5; //Drive cam servo x PWM 5
   private static final int DRIVE_CAM_Y = 6; //Driver cam servo y PWM 6
 
   // PCM Connections for Solenoids
   private static final int PCM_ARM_EJECT_ONE = 1;
-  private static final int PCM_ARM_EJECT_TWO = 0;
 
   // Digital IO Connections
   private static final int DIG_IO_TILT_SWITCH = 0;
@@ -76,9 +72,6 @@ public class Robot extends TimedRobot
   // private SpeedControllerGroup right = new SpeedControllerGroup(frontRight, rearRight);
   //Create the drive object
   private MecanumDrive robotDrive = new MecanumDrive(frontLeft, rearLeft, frontRight, rearRight);
-
-  //Create the ramp ESC
-  private Talon rampMotor = new Talon(PWM_RAMP_MOTOR); //Ramp ESC
 
   //Joysticks/Controllers
   private Joystick driveControl = new Joystick(0); //Movement and Driver Camera Control
@@ -164,7 +157,7 @@ public class Robot extends TimedRobot
   public void autonomousInit()
   {
     timer.reset(); //Reset the timer
-    timer.start(); //Sta                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   cccccccccccc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    x                                       rt the timer
+    timer.start(); //Start the timer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                cccccccccccc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    x                                       rt the timer
     getHIDInputValues();
     updateSmartDashboard();
   }
@@ -305,15 +298,6 @@ public class Robot extends TimedRobot
      } else {
        arms.ejectPancakeStop();
      }
-
-    //Flip Ramp
-    if(armControl.getBButton()) {
-      rampMotor.set(1.0);
-    } else if (armControl.getXButton()) {
-      rampMotor.set(-1.0);
-    } else {
-      rampMotor.set(0.0);
-    }
   }
   //-------------------------------------------------------------------------------------------
 }
