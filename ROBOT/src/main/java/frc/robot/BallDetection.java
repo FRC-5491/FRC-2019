@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 
-import edu.wpi.first.wpilibj.vision.VisionPipeline;
+import edu.wpi.first.vision.VisionPipeline;
 
 import org.opencv.core.*;
 import org.opencv.core.Core.*;
@@ -70,7 +70,7 @@ public class BallDetection implements VisionPipeline {
 
 		// Step Find_Blobs0:
 		Mat findBlobsInput = maskOutput;
-		double findBlobsMinArea = 100.0;
+		double findBlobsMinArea = 25.0;
 		double[] findBlobsCircularity = {0.0, 1.0};
 		boolean findBlobsDarkBlobs = false;
 		findBlobs(findBlobsInput, findBlobsMinArea, findBlobsCircularity, findBlobsDarkBlobs, findBlobsOutput);
