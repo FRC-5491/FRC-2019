@@ -29,10 +29,28 @@ import edu.wpi.first.wpilibj.smartdashboard.*;
 import frc.robot.CameraControl;
 import frc.robot.ArmControl;
 
+//Imports for vision processing
+import org.opencv.core.Rect;
+import org.opencv.imgproc.Imgproc;
+import edu.wpi.first.cameraserver.*;
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.cscore.UsbCamera;
+import edu.wpi.first.vision.VisionRunner;
+import edu.wpi.first.vision.VisionThread;
+import frc.robot.BallDetection;
+
 //Main Robot Class
 public class Robot extends TimedRobot
 {
   //VARIABLE DECLARATION ---------------------------------------------------
+
+  //Vision Things
+  private static final int IMG_WIDTH = 320;
+  private static final int IMG_HEIGHT = 240;
+  private VisionThread visionThread;
+  private double centerX = 0.0;
+  private final Object imageLock = new Object();
+
 
   //JOYSTICK DEADBAND
   private static final double DEADBAND = 0.1;
@@ -99,7 +117,7 @@ public class Robot extends TimedRobot
   public static int egg = 0; //EDUCATION
 
   //Arm Control
-  public static ArmControl arms = new ArmControl(PWM_ARM_HEIGHT, PWM_ARM_TILT, PWM_ARM_BALL, PCM_ARM_EJECT_ONE, PCM_ARM_EJECT_TWO); //Arm Control Object
+  public static ArmControl arms = new ArmControl(PWM_ARM_HEIGHT, PWM_ARM_TILT, PWM_ARM_BALL, PCM_ARM_EJECT_ONE, 1); //Arm Control Object
 
   //HID Device Values ------------------------------------------------------------
   private double driveX;
@@ -151,6 +169,19 @@ public class Robot extends TimedRobot
     SmartDashboard.putNumber("Joystick Y: ", y); //Add joystick Y val to SB
     SmartDashboard.putNumber("Joystick Z: ", z);  //Add joystick Z val to SB
     SmartDashboard.putNumber("Air Pressure", aP); //Add air pressure to SB  
+
+    //VISION THINGS
+    UsbCamera visionCam = CameraServer.getInstance().startAutomaticCapture();
+    visionCam.setResolution(IMG_WIDTH, IMG_HEIGHT);
+    visionThread = new VisionThread(visionCam, new BallDetection(), pipeline -> {
+      if (!pipeline.findContoursOutput().isEmpty()) {
+          Rect r = Imgproc.boundingRect(pipeline.findContoursOutput().get(0));
+          synchronized (imageLock) {
+              centerX = r.x + (r.width / 2);
+          }
+      }
+  });
+    visionThread.start();
   }
   //-------------------------------------------------------------------------------------------
   @Override
@@ -165,10 +196,21 @@ public class Robot extends TimedRobot
   @Override
   public void autonomousPeriodic()
   {
+    double centerX;
+    
     //DON'T PUT THINGS IN HERE
     getHIDInputValues();
     updateSmartDashboard();
     robotActions();
+    if (armControl.getAButton())
+    {
+      synchronized (imageLock)
+      {
+        centerX = this.centerX;
+      }
+      double turn = centerX - (IMG_WIDTH / 2);
+      robotDrive.driveCartesian(0.0, 0.0, turn * 0.005);
+    }
     
   }
   //-------------------------------------------------------------------------------------------
