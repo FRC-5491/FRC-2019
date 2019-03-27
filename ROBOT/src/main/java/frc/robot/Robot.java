@@ -171,7 +171,7 @@ public class Robot extends TimedRobot
     SmartDashboard.putNumber("Joystick Z: ", z);  //Add joystick Z val to SB
     SmartDashboard.putNumber("Air Pressure", aP); //Add air pressure to SB  
 
-    //VISION THINGS -- Detects orange balls
+    //VISION THINGS -- Detects orange balls -- SEE AUTONOMOUS PERIODIC
     UsbCamera visionCam = CameraServer.getInstance().startAutomaticCapture();
     visionCam.setResolution(IMG_WIDTH, IMG_HEIGHT);
     visionThread = new VisionThread(visionCam, new BallDetection(), pipeline -> {
