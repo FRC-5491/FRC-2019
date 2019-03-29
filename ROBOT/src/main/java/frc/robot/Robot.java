@@ -203,7 +203,7 @@ public class Robot extends TimedRobot
             float ratio = contourArea(contours[i]) / (boundRect.width * boundRect.height);
 
             //Find the center
-            Rect boundRect = Imgproc.boundingRect(countour);
+            Rect boundRect = Imgproc.boundingRect(contour);
             double centerX = boundRect.x + (boundRect.width / 2);
             double centerY = boundRect.y + (boundRect.height / 2);
           }
