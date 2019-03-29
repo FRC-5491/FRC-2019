@@ -178,6 +178,7 @@ public class Robot extends TimedRobot
 
     //VISION THINGS -- Detects orange balls -- SEE AUTONOMOUS PERIODIC
     //I HAVE NO IDEA IF THIS SHALL WORK
+    //I AM AWARE OF THE ERRORS
     UsbCamera visionCam = CameraServer.getInstance().startAutomaticCapture();
     visionCam.setResolution(IMG_WIDTH, IMG_HEIGHT);
     List<MatOfPoint> contours = new ArrayList<>();
