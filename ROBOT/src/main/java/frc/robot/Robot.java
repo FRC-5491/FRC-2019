@@ -30,6 +30,11 @@ import edu.wpi.first.wpilibj.smartdashboard.*;
 import frc.robot.CameraControl;
 import frc.robot.ArmControl;
 
+import java.util.ArrayList;
+
+import com.sun.tools.javac.util.List;
+
+import org.opencv.core.Mat;
 //Imports for vision processing
 import org.opencv.core.Rect;
 import org.opencv.imgproc.Imgproc;
@@ -118,7 +123,7 @@ public class Robot extends TimedRobot
   public static int egg = 0; //EDUCATION
 
   //Arm Control
-  public static ArmControl arms = new ArmControl(PWM_ARM_HEIGHT, PWM_ARM_TILT, PWM_ARM_BALL, PCM_ARM_EJECT_ONE, 1); //Arm Control Object
+  public static ArmControl arms = new ArmControl(PWM_ARM_HEIGHT, PWM_ARM_TILT, PWM_ARM_BALL, PCM_ARM_EJECT_ONE, 0); //Arm Control Object
 
   //HID Device Values ------------------------------------------------------------
   private double driveX;
@@ -138,7 +143,7 @@ public class Robot extends TimedRobot
   public void robotInit()
   {
     robotDrive.setDeadband(DEADBAND);
-    c.setClosedLoopControl(true); //Air compressor
+    c.setClosedLoopControl(false); //Air compressor
 
     //GET DATA
     double channel12I = pdu.getCurrent(12); //Get current of front left ESC
@@ -172,18 +177,40 @@ public class Robot extends TimedRobot
     SmartDashboard.putNumber("Air Pressure", aP); //Add air pressure to SB  
 
     //VISION THINGS -- Detects orange balls -- SEE AUTONOMOUS PERIODIC
+    //I HAVE NO IDEA IF THIS SHALL WORK
     UsbCamera visionCam = CameraServer.getInstance().startAutomaticCapture();
     visionCam.setResolution(IMG_WIDTH, IMG_HEIGHT);
+    List<MatOfPoint> contours = new ArrayList<>();
+    Mat hierarchy = new Mat();
+
     visionThread = new VisionThread(visionCam, new BallDetection(), pipeline -> {
-      if (!pipeline.findContoursOutput().isEmpty()) {
-          Rect r = Imgproc.boundingRect(pipeline.findContoursOutput().get(0));
-          synchronized (imageLock) {
-              centerX = r.x + (r.width / 2);
+          Imgproc.findContours(maskOutput, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+          for(int i = 0; i < contours.size(); i++) {
+            
+            //Contour Area
+            double contourArea =Imgproc.contourArea(contour);
+            if (contourArea < minArea || contourArea > maxArea) {
+              continue;
+            } 
+
+            //Aspect Ratio
+            Rect boundRect = ImageProc.boundingRect(contour);
+            float ratio = (float)boundRect.width/boundRect.height;
+
+            //Solidity
+            Rect boundRect = boundingRect(contours[i]);
+            float ratio = contourArea(contours[i]) / (boundRect.width * boundRect.height);
+
+            //Find the center
+            Rect boundRect = Imgproc.boundingRect(countour);
+            double centerX = boundRect.x + (boundRect.width / 2);
+            double centerY = boundRect.y + (boundRect.height / 2);
           }
+    });
       }
-  });
+  
     visionThread.start();
-  }
+    }
   //-------------------------------------------------------------------------------------------
   @Override
   public void autonomousInit()
@@ -317,10 +344,10 @@ public class Robot extends TimedRobot
     //Tilt the arms
     if (armRightY < -0.15) {
       // must make armRight into a positive number to make it go down
-      arms.tiltArms(-armRightY /2);
+      arms.tiltArms(armRightY /2);
     } else if (armRightY > 0.15 && switchArmTiltTop.get()){
       // need to negate armRight in order to tilt arm up
-      arms.tiltArms(-armRightY / 2);
+      arms.tiltArms(armRightY / 2);
     } else {
       arms.tiltArms(0.0);
     }
