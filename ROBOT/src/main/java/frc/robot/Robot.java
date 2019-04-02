@@ -31,9 +31,7 @@ import frc.robot.CameraControl;
 import frc.robot.ArmControl;
 
 import java.util.ArrayList;
-
-import com.sun.tools.javac.util.List;
-
+import edu.wpi.first.networktables.*;
 import org.opencv.core.Mat;
 //Imports for vision processing
 import org.opencv.core.Rect;
@@ -48,6 +46,9 @@ import frc.robot.BallDetection;
 //Main Robot Class
 public class Robot extends TimedRobot
 {
+  private static final double CONTROL_DRIVE_SENSITIVITY = 0.7;
+  private static final double CONTROL_TURN_SENSITIVITY = 0.5;
+  private static final double CONTROL_STRAFE_SENSITIVITY = 0.25;
   //VARIABLE DECLARATION ---------------------------------------------------
 
   //Vision Things
@@ -111,7 +112,7 @@ public class Robot extends TimedRobot
   public static PowerDistributionPanel pdu = new PowerDistributionPanel(0); //PDU on CANBUS 0
 
   //Pneumatics
-  public static Compressor c = new Compressor(0); //Air Compressor
+  //public static Compressor c = new Compressor(0); //Air Compressor
   AnalogInput airPressure = new AnalogInput(0); //Pressure readings
 
   //ALL INPUTS ARE INPUT PULLUP... TRUE == OFF
@@ -136,6 +137,15 @@ public class Robot extends TimedRobot
   private double armTriggerR;
   private double armTriggerL;
   private boolean armBumperL;
+
+  //Vision Variables
+  private boolean driverVision, tapeVision, cargoVision, cargoSeen, tapeSeen;
+  private NetworkTableEntry tapeDetected, cargoDetected, tapeYaw, cargoYaw,
+          videoTimestamp;
+  private XboxController driverJoy;
+  private double targetAngle;
+  NetworkTableInstance instance;
+  NetworkTable chickenVision;
   
   //BEGIN ROBOT CODE --------------------------------------------------------------
   //-------------------------------------------------------------------------------------------
@@ -143,8 +153,11 @@ public class Robot extends TimedRobot
   public void robotInit()
   {
     robotDrive.setDeadband(DEADBAND);
-    c.setClosedLoopControl(false); //Air compressor
+    //c.setClosedLoopControl(false); //Air compressor
 
+    // Start camera capture
+    CameraServer.getInstance().startAutomaticCapture(0);
+    CameraServer.getInstance().startAutomaticCapture(1);
     //GET DATA
     double channel12I = pdu.getCurrent(12); //Get current of front left ESC
     double channel14I = pdu.getCurrent(14); //Get current of rear left ESC
@@ -178,40 +191,26 @@ public class Robot extends TimedRobot
 
     //VISION THINGS -- Detects orange balls -- SEE AUTONOMOUS PERIODIC
     //I HAVE NO IDEA IF THIS SHALL WORK
-    //I AM AWARE OF THE ERRORS
-    UsbCamera visionCam = CameraServer.getInstance().startAutomaticCapture();
-    visionCam.setResolution(IMG_WIDTH, IMG_HEIGHT);
-    List<MatOfPoint> contours = new ArrayList<>();
-    Mat hierarchy = new Mat();
 
-    visionThread = new VisionThread(visionCam, new BallDetection(), pipeline -> {
-          Imgproc.findContours(maskOutput, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-          for(int i = 0; i < contours.size(); i++) {
-            
-            //Contour Area
-            double contourArea =Imgproc.contourArea(contour);
-            if (contourArea < minArea || contourArea > maxArea) {
-              continue;
-            } 
-
-            //Aspect Ratio
-            Rect boundRect = ImageProc.boundingRect(contour);
-            float ratio = (float)boundRect.width/boundRect.height;
-
-            //Solidity
-            Rect boundRect = boundingRect(contours[i]);
-            float ratio = contourArea(contours[i]) / (boundRect.width * boundRect.height);
-
-            //Find the center
-            Rect boundRect = Imgproc.boundingRect(contour);
-            double centerX = boundRect.x + (boundRect.width / 2);
-            double centerY = boundRect.y + (boundRect.height / 2);
-          }
-    });
-      }
-  
-    visionThread.start();
-    }
+    instance = NetworkTableInstance.getDefault();
+ 
+        chickenVision = instance.getTable("ChickenVision");
+ 
+        tapeDetected = chickenVision.getEntry("tapeDetected");
+        cargoDetected = chickenVision.getEntry("cargoDetected");
+        tapeYaw = chickenVision.getEntry("tapeYaw");
+        cargoYaw = chickenVision.getEntry("cargoYaw");
+         NetworkTableEntry driveWanted = chickenVision.getEntry("Driver");
+         NetworkTableEntry tapeWanted = chickenVision.getEntry("Tape");
+         NetworkTableEntry cargoWanted = chickenVision.getEntry("Cargo");
+ 
+        videoTimestamp = chickenVision.getEntry("VideoTimestamp");
+ 
+        tapeVision = cargoVision = false;
+        driverVision = true;
+        driverJoy = new XboxController(0);
+    
+  }
   //-------------------------------------------------------------------------------------------
   @Override
   public void autonomousInit()
@@ -231,17 +230,6 @@ public class Robot extends TimedRobot
     getHIDInputValues();
     updateSmartDashboard();
     robotActions();
-
-    //While A button is pressed, orient robot to face the ball
-    if (armControl.getAButton())
-    {
-      synchronized (imageLock)
-      {
-        centerX = this.centerX;
-      }
-      double turn = centerX - (IMG_WIDTH / 2);
-      robotDrive.driveCartesian(0.0, 0.0, turn * 0.005);
-    }
     
   }
   //-------------------------------------------------------------------------------------------
@@ -324,17 +312,19 @@ public class Robot extends TimedRobot
   private void robotActions() {
     driverCam.look(driveControl.getPOV());
     //Move the robot
-    robotDrive.driveCartesian(0.0, driveY, driveX);
+    robotDrive.driveCartesian(driveX * Robot.CONTROL_STRAFE_SENSITIVITY, 
+                              driveY * Robot.CONTROL_DRIVE_SENSITIVITY,
+                              driveZ * Robot.CONTROL_TURN_SENSITIVITY);
     //robotDrive.driveCartesian(driveX, driveY, driveZ);
 
     //Move the arms
     if(armLeftY >= 0.15 && switchArmHeightTop_ArmMounted.get() || switchArmHeightTop_SideMounted.get()){
       if (switchArmHeightTop_ArmMounted.get() && switchArmHeightTop_SideMounted.get()) {
         //Full Speed, No switches pressed
-        arms.moveArms(armLeftY);
-      }else{
-        // One switch pressed - we're close to the top. Slow way down
-        arms.moveArms(armLeftY / 4);
+        arms.moveArms(armLeftY * 0.7);
+      }else if (armLeftY > 0){
+        // One switch pressed and moving up - we're close to the tdeop. Slow way down
+        arms.moveArms(armLeftY *0.55);
       }
     } else if (armLeftY <= -0.15 && switchArmHeightBottom.get()) {
       arms.moveArms(armLeftY);
@@ -344,11 +334,13 @@ public class Robot extends TimedRobot
 
     //Tilt the arms
     if (armRightY < -0.15) {
-      // must make armRight into a positive number to make it go down
-      arms.tiltArms(armRightY /2);
+      // move arm down
+      double armYActual = armRightY + 0.15;
+      arms.tiltArms(armYActual / 2);
     } else if (armRightY > 0.15 && switchArmTiltTop.get()){
-      // need to negate armRight in order to tilt arm up
-      arms.tiltArms(armRightY / 2);
+      double armYActual = armRightY - 0.15;
+      // move arm down
+      arms.tiltArms(armYActual / 2);
     } else {
       arms.tiltArms(0.0);
     }
@@ -362,15 +354,29 @@ public class Robot extends TimedRobot
       arms.stopBallMotors();
     }
 
-     //Pancakes
-     if (armBumperL == true) {
-      arms.ejectPancakeExtend();
-      System.out.println("pancake eject");
-     //} else if (armControl.getYButton()){
-       //arms.ejectPancakeRetract();
-     } else {
-       arms.ejectPancakeStop();
-     }
+    //  //Pancakes
+    //  if (armBumperL == true) {
+    //   arms.ejectPancakeExtend();
+    //   System.out.println("pancake eject");
+    //  //} else if (armControl.getYButton()){
+    //    //arms.ejectPancakeRetract();
+    //  } else {
+    //    arms.ejectPancakeStop();
+    //  }
+
+     //Ball Detection
+
+     boolean cargoDesired = armControl.getAButton();
+
+     if (cargoDesired) {
+      cargoSeen = cargoDetected.getBoolean(false);
+
+      if (cargoSeen)
+          targetAngle = cargoYaw.getDouble(0);
+      else
+          targetAngle = 0;
+
+  }
   }
   //-------------------------------------------------------------------------------------------
 }
