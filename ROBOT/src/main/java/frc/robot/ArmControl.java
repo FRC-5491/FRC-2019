@@ -22,8 +22,8 @@ public class ArmControl
     private Talon tilt;
     private PWMVictorSPX ball;
 
-    private Solenoid s1;
-    private Solenoid s2;
+    //private Solenoid s1;
+    //private Solenoid s2;
 
     private DigitalInput armTiltSwitch;
 
@@ -51,8 +51,8 @@ public class ArmControl
         this.ball = new PWMVictorSPX(pwmBall);
         this.tilt = new Talon(pwmTilt);
         this.height = new Talon(pwmHeight);
-        this.s1 = new Solenoid(pcmChannelOne);
-        this.s2 = new Solenoid(pcmChannelTwo);
+        //this.s1 = new Solenoid(pcmChannelOne);
+        //this.s2 = new Solenoid(pcmChannelTwo);
  
     }
 
@@ -98,22 +98,22 @@ public class ArmControl
         ball.set(0.0);
     }
 
-    public void ejectPancakeExtend()
-    {
-        s1.set(true);
-        s2.set(false);
-    }
+    // public void ejectPancakeExtend()
+    // {
+    //     s1.set(true);
+    //     s2.set(false);
+    // }
 
-    public void ejectPancakeRetract()
-    {
-        s1.set(false);
-        s2.set(true);
-    }
+    // public void ejectPancakeRetract()
+    // {
+    //     s1.set(false);
+    //     s2.set(true);
+    // }
 
-    public void ejectPancakeStop()
-    {
-        s1.set(false);
-        s2.set(false);
-    }
+    // public void ejectPancakeStop()
+    // {
+    //     s1.set(false);
+    //     s2.set(false);
+    // }
 
 }
